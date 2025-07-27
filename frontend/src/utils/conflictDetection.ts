@@ -14,6 +14,7 @@ export interface ConflictInfo {
 /**
  * Checks if two time ranges overlap
  * Returns true if the ranges overlap, false otherwise
+ * Adjacent times (e.g., 9-5 then 5-8) do NOT count as overlap
  */
 export const timeRangesOverlap = (
   start1: Date,
@@ -29,6 +30,7 @@ export const timeRangesOverlap = (
 
   // Two ranges overlap if:
   // - start1 is before end2 AND end1 is after start2
+  // BUT adjacent times (end1 === start2 or end2 === start1) should NOT overlap
   return start1Time < end2Time && end1Time > start2Time;
 };
 

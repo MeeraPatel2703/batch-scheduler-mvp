@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { useDrop } from 'react-dnd';
+import React from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -35,30 +34,6 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
   onCreateBatch,
   onEditBatch
 }) => {
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<{ start: Date; end: Date } | null>(null);
-
-  // Drop zone setup - simplified approach
-  const [{ isOver }, drop] = useDrop(() => ({
-    accept: 'equipment',
-    drop: (item: { equipment: Equipment }, monitor) => {
-      console.log('Equipment dropped:', item.equipment.name);
-      
-      // If we have a selected time slot, open dialog immediately
-      if (selectedTimeSlot && onCreateBatch) {
-        onCreateBatch(item.equipment, selectedTimeSlot.start, selectedTimeSlot.end);
-        setSelectedTimeSlot(null);
-      } else {
-        // Show alert to user about selecting time first
-        alert('Please select a time slot on the calendar first, then drag equipment to that area.');
-      }
-    },
-    collect: (monitor) => ({
-      isOver: monitor.isOver(),
-    }),
-  }));
-
-  // This is no longer needed as we're using the new dialog system
-
   // Color mapping for batch statuses
   const getStatusColor = (status: BatchStatus) => {
     switch (status) {
@@ -107,30 +82,19 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
   // Handle clicking on time slots (for creating new batches)
   const handleDateSelect = (selectInfo: any) => {
     const { start, end } = selectInfo;
-    console.log('Selected time range:', {
-      start: start.toISOString(),
-      end: end.toISOString(),
-      duration: `${(end - start) / (1000 * 60 * 60)} hours`
-    });
     
-    // Store the selected time slot for drag and drop
-    setSelectedTimeSlot({ start, end });
+    // Clear selection immediately to prevent visual clutter
+    selectInfo.view.calendar.unselect();
     
-    // Keep the selection visible and provide user feedback
-    console.log('Time slot selected! Now drag equipment from the sidebar to create a batch.');
-    
-    // Don't automatically clear - let user control it
-    // Clear after 10 seconds to allow for drag and drop
-    setTimeout(() => {
-      selectInfo.view.calendar.unselect();
-      setSelectedTimeSlot(null);
-    }, 10000); // 10 seconds to allow drag and drop
+    // Open create batch dialog with pre-filled times
+    if (onCreateBatch) {
+      onCreateBatch(undefined, start, end);
+    }
   };
 
   // Handle clicking on existing batch events
   const handleEventClick = (clickInfo: any) => {
     const { batch } = clickInfo.event.extendedProps;
-    console.log('Clicked batch event:', batch);
     
     if (onEditBatch) {
       onEditBatch(batch);
@@ -149,55 +113,13 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
 
   return (
     <Paper elevation={2} sx={{ p: 2, height: '100%' }}>
-      {/* Instructions for drag and drop */}
-      {selectedTimeSlot && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          <Typography variant="body2">
-            ✅ Time slot selected! Now drag equipment from the sidebar to create a batch.
-          </Typography>
-        </Alert>
-      )}
+      <Alert severity="info" sx={{ mb: 2 }}>
+        <Typography variant="body2">
+          📅 Click and drag on the calendar to create a new batch
+        </Typography>
+      </Alert>
       
-      {!selectedTimeSlot && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          <Typography variant="body2">
-            📅 Click and drag on the calendar to select a time slot, then drag equipment here.
-          </Typography>
-        </Alert>
-      )}
-      
-      <Box 
-        ref={drop}
-        sx={{ 
-          height: 'calc(100vh - 180px)',
-          backgroundColor: isOver ? 'rgba(25, 118, 210, 0.1)' : 'transparent',
-          transition: 'background-color 0.2s ease',
-          border: selectedTimeSlot ? '2px dashed #1976d2' : isOver ? '2px dashed #ff9800' : '1px solid transparent',
-          borderRadius: 1,
-          position: 'relative'
-        }}
-      >
-        {isOver && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 1000,
-              backgroundColor: 'primary.main',
-              color: 'white',
-              px: 3,
-              py: 1.5,
-              borderRadius: 2,
-              pointerEvents: 'none'
-            }}
-          >
-            <Typography variant="h6">
-              Drop here to create batch!
-            </Typography>
-          </Box>
-        )}
+      <Box sx={{ height: 'calc(100vh - 180px)' }}>
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           headerToolbar={{

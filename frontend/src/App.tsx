@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import EquipmentSidebar from './components/EquipmentSidebar';
 import SimpleCalendar from './components/SimpleCalendar';
 import BatchDialog from './components/BatchDialog';
+import BatchCreationTests from './components/BatchCreationTests';
 import { MOCK_EQUIPMENT, MOCK_BATCHES, CreateBatchRequest, BatchStatus, Batch, Equipment } from './types';
 
 const theme = createTheme({
@@ -134,6 +135,10 @@ function App() {
                   <Route 
                     path="/dashboard" 
                     element={<Dashboard selectedEquipment={selectedEquipment} />} 
+                  />
+                  <Route 
+                    path="/tests" 
+                    element={<BatchCreationTests />} 
                   />
                 </Routes>
               </Box>
